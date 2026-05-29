@@ -166,14 +166,15 @@ const downloadExcel = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Sales Report");
 
-    sheet.columns = [
-      { header: "Order #", key: "orderNumber", width: 25 },
-      { header: "Date", key: "date", width: 18 },
-      { header: "Status", key: "status", width: 15 },
-      { header: "Payment", key: "payment", width: 15 },
-      { header: "Amount", key: "totalAmount", width: 18 },
-      { header: "Refund", key: "refund", width: 15 },
-    ];
+   sheet.columns = [
+  { header: "Order #", key: "orderNumber", width: 25 },
+  { header: "Date", key: "date", width: 18 },
+  { header: "Payment Method", key: "payment", width: 20 },
+  { header: "Total Amount", key: "totalAmount", width: 18 },
+  { header: "Offer Discount", key: "offerDiscount", width: 18 },
+  { header: "Coupon Deduction", key: "couponDiscount", width: 18 },
+  { header: "Refund", key: "refund", width: 15 },
+];
 
     let totalAmount = 0;
     let totalRefund = 0;
@@ -198,13 +199,14 @@ const downloadExcel = async (req, res) => {
       const amount = subTotal + tax;
 
       sheet.addRow({
-        orderNumber: order.orderNumber,
-        date: moment(order.createdAt).format("DD-MM-YYYY"),
-        status: order.orderStatus,
-        payment: order.paymentMethod,
-        totalAmount: amount,
-        refund: refund,
-      });
+  orderNumber: order.orderNumber,
+  date: moment(order.createdAt).format("DD-MM-YYYY"),
+  payment: order.paymentMethod,
+  totalAmount: amount,
+  offerDiscount: order.offerDiscount || 0,
+  couponDiscount: order.couponDiscount || 0,
+  refund: refund,
+});
 
       totalAmount += amount;
       totalRefund += refund;
@@ -236,6 +238,184 @@ const downloadExcel = async (req, res) => {
 };
 
 
+// const downloadPDF = async (req, res) => {
+//   try {
+//     const filter = req.query.filter || "daily";
+
+//     const { startDate, endDate } = getDateRange(
+//       filter,
+//       req.query.startDate,
+//       req.query.endDate
+//     );
+
+//     const orders = await Order.find({
+//       createdAt: { $gte: startDate, $lte: endDate },
+//     })
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     // 👉 LANDSCAPE avoids overlap (IMPORTANT FIX)
+//     const doc = new PDFDocument({
+//       margin: 30,
+//       size: "A4",
+//       layout: "landscape",
+//     });
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader(
+//       "Content-Disposition",
+//       "attachment; filename=sales-report.pdf"
+//     );
+
+//     doc.pipe(res);
+
+//     // ================= TITLE =================
+//     doc.fontSize(18).font("Helvetica-Bold").text("SALES REPORT", {
+//       align: "center",
+//     });
+
+//     doc.moveDown();
+
+//     doc
+//       .fontSize(9)
+//       .font("Helvetica")
+//       .text(
+//         `From: ${moment(startDate).format("YYYY-MM-DD")} To: ${moment(endDate).format("YYYY-MM-DD")}`,
+//         { align: "center" }
+//       );
+
+//     doc.moveDown(2);
+
+//     // ================= TABLE HEADER =================
+//     const tableTop = 80;
+
+// const col = {
+//   order: 30,
+//   date: 145,
+//   payment: 235,
+//   amount: 360,
+//   offer: 455,
+//   coupon: 560,
+//   refund: 690,
+// };
+//     doc.font("Helvetica-Bold").fontSize(9);
+
+//     doc.text("Order#", col.order, tableTop);
+// doc.text("Date", col.date, tableTop);
+// doc.text("Payment", col.payment, tableTop);
+// doc.text("Amount", col.amount, tableTop);
+// doc.text("Offer Discount", col.offer, tableTop);
+// doc.text("Coupon Deduction", col.coupon, tableTop);
+// doc.text("Refund", col.refund, tableTop);
+//     doc
+//       .moveTo(30, tableTop + 15)
+//       .lineTo(820, tableTop + 15)
+//       .stroke();
+
+//     // ================= ROWS =================
+//     let y = tableTop + 25;
+
+//     let totalAmount = 0;
+//     let totalRefund = 0;
+
+//     doc.font("Helvetica").fontSize(9);
+
+//     orders.forEach((order) => {
+//       let subTotal = 0;
+//       let refund = 0;
+
+//       order.orderedItems.forEach((item) => {
+//         const itemTotal = item.purchasedPrice * item.quantity;
+
+//         if (!["cancelled", "returned"].includes(item.itemStatus)) {
+//           subTotal += itemTotal;
+//         }
+
+//         if (item.itemStatus === "returned") {
+//           refund += calculateItemRefund(order, item);
+//         }
+//       });
+
+//       const tax = Math.round(subTotal * 0.05);
+//       const amount = subTotal + tax;
+
+//       // ================= PAGE BREAK =================
+//       if (y > 500) {
+//         doc.addPage({ layout: "landscape" });
+//         y = 50;
+//       }
+
+//       // ================= ROW DATA =================
+//       doc.text(order.orderNumber, col.order, y, {
+//   width: 100,
+//   ellipsis: true,
+// });
+
+// doc.text(
+//   moment(order.createdAt).format("YYYY-MM-DD"),
+//   col.date,
+//   y
+// );
+
+// doc.text(order.paymentMethod, col.payment, y, {
+//   width: 90,
+//   ellipsis: true,
+// });
+
+// doc.text(`₹${amount.toFixed(2)}`, col.amount, y, {
+//   width: 70,
+//   align: "right",
+// });
+
+// doc.text(
+//   `₹${(order.offerDiscount || 0).toFixed(2)}`,
+//   col.offer,
+//   y,
+//   {
+//     width: 70,
+//     align: "right",
+//   }
+// );
+
+// doc.text(
+//   `₹${(order.couponDiscount || 0).toFixed(2)}`,
+//   col.coupon,
+//   y,
+//   {
+//     width: 80,
+//     align: "right",
+//   }
+// );
+
+// doc.text(`₹${refund.toFixed(2)}`, col.refund, y, {
+//   width: 70,
+//   align: "right",
+// });
+//     // ================= FOOTER =================
+//     doc
+//       .moveTo(30, y)
+//       .lineTo(820, y)
+//       .stroke();
+
+//     y += 20;
+
+//     doc.font("Helvetica-Bold").fontSize(11);
+
+//     doc.text(`Total Orders: ${orders.length}`, 40, y);
+//     y += 15;
+
+//     doc.text(`Total Sales: ₹${totalAmount.toFixed(2)}`, 40, y);
+//     y += 15;
+
+//     doc.text(`Total Refund: ₹${totalRefund.toFixed(2)}`, 40, y);
+
+//     doc.end();
+//   } catch (error) {
+//     console.log(error);
+//        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: Messages.INTERNAL_SERVER_ERROR });
+//   }
+// };
+
 const downloadPDF = async (req, res) => {
   try {
     const filter = req.query.filter || "daily";
@@ -252,7 +432,7 @@ const downloadPDF = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // 👉 LANDSCAPE avoids overlap (IMPORTANT FIX)
+    // ================= PDF SETUP =================
     const doc = new PDFDocument({
       margin: 30,
       size: "A4",
@@ -268,46 +448,75 @@ const downloadPDF = async (req, res) => {
     doc.pipe(res);
 
     // ================= TITLE =================
-    doc.fontSize(18).font("Helvetica-Bold").text("SALES REPORT", {
-      align: "center",
-    });
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .text("SALES REPORT", {
+        align: "center",
+      });
 
     doc.moveDown();
 
     doc
-      .fontSize(10)
+      .fontSize(9)
       .font("Helvetica")
       .text(
-        `From: ${moment(startDate).format("YYYY-MM-DD")} To: ${moment(endDate).format("YYYY-MM-DD")}`,
-        { align: "center" }
+        `From: ${moment(startDate).format(
+          "YYYY-MM-DD"
+        )} To: ${moment(endDate).format("YYYY-MM-DD")}`,
+        {
+          align: "center",
+        }
       );
 
-    doc.moveDown(2);
+    doc.moveDown(3);
 
     // ================= TABLE HEADER =================
-    const tableTop = 80;
+    const tableTop = 110;
 
     const col = {
-      order: 40,
-      date: 170,
-      payment: 260,
-      status: 350,
-      amount: 460,
-      refund: 560,
+      order: 30,
+      date: 145,
+      payment: 235,
+      amount: 360,
+      offer: 455,
+      coupon: 560,
+      refund: 690,
     };
 
-    doc.font("Helvetica-Bold").fontSize(10);
+    doc.font("Helvetica-Bold").fontSize(9);
 
     doc.text("Order#", col.order, tableTop);
+
     doc.text("Date", col.date, tableTop);
-    doc.text("Payment", col.payment, tableTop);
-    doc.text("Status", col.status, tableTop);
-    doc.text("Amount", col.amount, tableTop, { width: 80, align: "right" });
-    doc.text("Refund", col.refund, tableTop, { width: 80, align: "right" });
+
+    doc.text("Payment", col.payment, tableTop, {
+      width: 90,
+    });
+
+    doc.text("Amount", col.amount, tableTop, {
+      width: 70,
+      align: "right",
+    });
+
+    doc.text("Offer Discount", col.offer, tableTop, {
+      width: 80,
+      align: "right",
+    });
+
+    doc.text("Coupon Deduction", col.coupon, tableTop, {
+      width: 90,
+      align: "right",
+    });
+
+    doc.text("Refund", col.refund, tableTop, {
+      width: 70,
+      align: "right",
+    });
 
     doc
       .moveTo(30, tableTop + 15)
-      .lineTo(820, tableTop + 15)
+      .lineTo(800, tableTop + 15)
       .stroke();
 
     // ================= ROWS =================
@@ -316,7 +525,7 @@ const downloadPDF = async (req, res) => {
     let totalAmount = 0;
     let totalRefund = 0;
 
-    doc.font("Helvetica").fontSize(9);
+    doc.font("Helvetica").fontSize(8);
 
     orders.forEach((order) => {
       let subTotal = 0;
@@ -329,7 +538,10 @@ const downloadPDF = async (req, res) => {
           subTotal += itemTotal;
         }
 
-        if (item.itemStatus === "returned") {
+        if (
+          item.itemStatus === "returned" ||
+          item.itemStatus === "cancelled"
+        ) {
           refund += calculateItemRefund(order, item);
         }
       });
@@ -338,28 +550,100 @@ const downloadPDF = async (req, res) => {
       const amount = subTotal + tax;
 
       // ================= PAGE BREAK =================
-      if (y > 500) {
-        doc.addPage({ layout: "landscape" });
+      if (y > 520) {
+        doc.addPage({
+          layout: "landscape",
+          margin: 30,
+        });
+
         y = 50;
+
+        // Reprint table header on new page
+        doc.font("Helvetica-Bold").fontSize(9);
+
+        doc.text("Order#", col.order, y);
+
+        doc.text("Date", col.date, y);
+
+        doc.text("Payment", col.payment, y, {
+          width: 90,
+        });
+
+        doc.text("Amount", col.amount, y, {
+          width: 70,
+          align: "right",
+        });
+
+        doc.text("Offer Discount", col.offer, y, {
+          width: 80,
+          align: "right",
+        });
+
+        doc.text("Coupon Deduction", col.coupon, y, {
+          width: 90,
+          align: "right",
+        });
+
+        doc.text("Refund", col.refund, y, {
+          width: 70,
+          align: "right",
+        });
+
+        doc
+          .moveTo(30, y + 15)
+          .lineTo(800, y + 15)
+          .stroke();
+
+        y += 25;
+
+        doc.font("Helvetica").fontSize(8);
       }
 
       // ================= ROW DATA =================
+
       doc.text(order.orderNumber, col.order, y, {
-        width: 120,
+        width: 100,
         ellipsis: true,
       });
 
-      doc.text(moment(order.createdAt).format("YYYY-MM-DD"), col.date, y);
-      doc.text(order.paymentMethod, col.payment, y);
-      doc.text(order.orderStatus, col.status, y);
+      doc.text(
+        moment(order.createdAt).format("YYYY-MM-DD"),
+        col.date,
+        y
+      );
+
+      doc.text(order.paymentMethod, col.payment, y, {
+        width: 90,
+        ellipsis: true,
+      });
 
       doc.text(`₹${amount.toFixed(2)}`, col.amount, y, {
-        width: 80,
+        width: 70,
         align: "right",
       });
 
+      doc.text(
+        `₹${(order.offerDiscount || 0).toFixed(2)}`,
+        col.offer,
+        y,
+        {
+          width: 80,
+          align: "right",
+        }
+      );
+
+      doc.text(
+        `₹${(order.couponDiscount || 0).toFixed(2)}`,
+        col.coupon,
+        y,
+        {
+          width: 90,
+          align: "right",
+        }
+      );
+
       doc.text(`₹${refund.toFixed(2)}`, col.refund, y, {
-        width: 80,
+        width: 70,
         align: "right",
       });
 
@@ -370,9 +654,10 @@ const downloadPDF = async (req, res) => {
     });
 
     // ================= FOOTER =================
+
     doc
       .moveTo(30, y)
-      .lineTo(820, y)
+      .lineTo(800, y)
       .stroke();
 
     y += 20;
@@ -380,21 +665,26 @@ const downloadPDF = async (req, res) => {
     doc.font("Helvetica-Bold").fontSize(11);
 
     doc.text(`Total Orders: ${orders.length}`, 40, y);
-    y += 15;
+
+    y += 18;
 
     doc.text(`Total Sales: ₹${totalAmount.toFixed(2)}`, 40, y);
-    y += 15;
+
+    y += 18;
 
     doc.text(`Total Refund: ₹${totalRefund.toFixed(2)}`, 40, y);
 
     doc.end();
   } catch (error) {
     console.log(error);
-       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: Messages.INTERNAL_SERVER_ERROR });
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({
+        message: Messages.INTERNAL_SERVER_ERROR,
+      });
   }
 };
-
-
 
 
 

@@ -274,7 +274,7 @@
                 <td><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
                 <td><%= order.paymentMethod %></td>
                 <td>₹<%= order.totalAmount.toFixed(2) %></td>
-                <td>₹<%= (order.discount || 0).toFixed(2) %></td>
+                <td>₹<%= (order.offerDiscount || 0).toFixed(2) %></td>
                 <td>₹<%= (order.couponDiscount || 0).toFixed(2) %></td>
                 <td>₹<%= (order.refundAmount || 0).toFixed(2) %></td>
    
