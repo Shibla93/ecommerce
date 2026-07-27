@@ -9,7 +9,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:  "https://wristonwatch.store/auth/google/callback"
+     callbackURL: "https://ecommerce-1-vgdp.onrender.com/auth/google/callback"
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
